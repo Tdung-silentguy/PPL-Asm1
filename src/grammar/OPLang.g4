@@ -58,29 +58,26 @@ CHAR: 'char';
 BOOL: 'bool';
 VOID: 'void';
 STRING: 'string';
-// escape sequences
-escseq  : NEWLINE
-        | HTAB
-        | BACKSLASH
-        | SINGLEQUOTE
-        | DOUBLEQUOTE;
-NEWLINE: '\n';
-HTAB: '\t';
-BACKSLASH: '\\';
-SINGLEQUOTE: '\'';
-DOUBLEQUOTE: '\"';
 
+fragment ESCSEQPART: [nt\\'"];
+fragment ESCSEQ: '\\' ESCSEQPART;
+// fragment là một bộ phận cấu thành của một token, ko thể làm một token đứng độc lập
 
 // id & literals
 ID       : [a-zA-Z_][a-zA-Z0-9_]*;
 INTLIT   : [0-9]+;                      // integer literal
-STRINGLIT: '"' (~["\\] | '\\' .)* '"';  // string literal
+STRINGLIT: '"' ( ~["\\] | ESCSEQ )* '"';  // string literal
 // whitespace
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs 
 // exceptions
-ERROR_CHAR: [^\x00-\x7F]; // non-ASCII character
-ILLEGAL_ESCAPE:.;
-UNCLOSE_STRING:.;
+ERROR_CHAR:  [^\x00-\x7F]; // a non-ASCII character
+//[^\u0080-\uFFFF];
+ILLEGAL_ESCAPE: '\\' ~[nt\\'"]; // a \\ followed by a char not in ESCSEQPART
+UNCLOSE_STRING: '"' (~["\\\n\r] | '\\' .)*;
+// This is similar to STRINGLIT, but without ending doublequote.
+// It ends at \n or EOF (not accepting it by ~["\\\n\r])
+// This is only considered after STRINGLIT
+// --- I still can't figure out a way to not include the opening '"', despite requirements.
 
 
 // SYNTAX (PARSER) RULES -------
